@@ -22,7 +22,6 @@ import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.common.MapBuilder;
@@ -66,6 +65,9 @@ public class SweetAlertModule extends ReactContextBaseJavaModule implements Life
     /* package */ static final String CUSTOM_IMAGE_TYPE = "CUSTOM_IMAGE_TYPE";
     /* package */ static final String PROGRESS_TYPE = "PROGRESS_TYPE";
 
+    /* package */ static final int BUTTON_POSITIVE = 1;
+    /* package */ static final int BUTTON_NEGATIVE = 0;
+
 
     /* package */ static final Map<String, Object> CONSTANTS_TYPE = MapBuilder.<String, Object>of(
             NORMAL_TYPE, SweetAlertDialog.NORMAL_TYPE,
@@ -79,12 +81,12 @@ public class SweetAlertModule extends ReactContextBaseJavaModule implements Life
             ACTION_BUTTON_CLICKED, ACTION_BUTTON_CLICKED,
             ACTION_DISMISSED, ACTION_DISMISSED,
 
-            KEY_BUTTON_POSITIVE, DialogInterface.BUTTON_POSITIVE,
-            KEY_BUTTON_NEGATIVE, DialogInterface.BUTTON_NEGATIVE);
+            KEY_BUTTON_POSITIVE, BUTTON_POSITIVE,
+            KEY_BUTTON_NEGATIVE, BUTTON_NEGATIVE);
 
-   static {
-       CONSTANTS.putAll(CONSTANTS_TYPE);
-   }
+    static {
+        CONSTANTS.putAll(CONSTANTS_TYPE);
+    }
 
     private final ReactApplicationContext reactContext;
     private boolean mIsInForeground;
@@ -112,9 +114,10 @@ public class SweetAlertModule extends ReactContextBaseJavaModule implements Life
     }
 
     SweetAlertDialog sweetAlertDialog;
+    private boolean mCallbackConsumed = false;
 
     @ReactMethod
-    public void showAlert(ReadableMap options, Callback errorCallback, final Callback actionCallback) {
+    public void showAlert(ReadableMap options,final Callback actionCallback) {
 
         Log.e(getName(), "" + options);
         if (options != null) {
@@ -141,14 +144,16 @@ public class SweetAlertModule extends ReactContextBaseJavaModule implements Life
                 ReadableType readableType = options.getType(KEY_BUTTON_POSITIVE);
                 if (readableType == ReadableType.String) {
                     dialog.setConfirmText(options.getString(KEY_BUTTON_POSITIVE));
-                } else if (readableType == ReadableType.Map) {
-                    ReadableMap m = options.getMap(KEY_BUTTON_POSITIVE);
-                    dialog.setConfirmText(m.getString(KEY_TEXT));
                     dialog.setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
                         @Override
                         public void onClick(SweetAlertDialog sDialog) {
                             sDialog.dismiss();
-                            actionCallback.invoke(ACTION_BUTTON_CLICKED, DialogInterface.BUTTON_POSITIVE);
+                            if (!mCallbackConsumed) {
+                                if (getReactApplicationContext().hasActiveCatalystInstance()) {
+                                    actionCallback.invoke(ACTION_BUTTON_CLICKED, BUTTON_POSITIVE);
+                                    mCallbackConsumed = true;
+                                }
+                            }
                         }
                     });
                 }
@@ -159,14 +164,16 @@ public class SweetAlertModule extends ReactContextBaseJavaModule implements Life
                 ReadableType readableType = options.getType(KEY_BUTTON_NEGATIVE);
                 if (readableType == ReadableType.String) {
                     dialog.setCancelText(options.getString(KEY_BUTTON_NEGATIVE));
-                } else if (readableType == ReadableType.Map) {
-                    ReadableMap m = options.getMap(KEY_BUTTON_NEGATIVE);
-                    dialog.setCancelText(m.getString(KEY_TEXT));
                     dialog.setCancelClickListener(new SweetAlertDialog.OnSweetClickListener() {
                         @Override
                         public void onClick(SweetAlertDialog sDialog) {
                             sDialog.dismiss();
-                            actionCallback.invoke(ACTION_BUTTON_CLICKED, DialogInterface.BUTTON_NEGATIVE);
+                            if (!mCallbackConsumed) {
+                                if (getReactApplicationContext().hasActiveCatalystInstance()) {
+                                    actionCallback.invoke(ACTION_BUTTON_CLICKED, BUTTON_NEGATIVE);
+                                    mCallbackConsumed = true;
+                                }
+                            }
                         }
                     });
                 }
@@ -174,17 +181,13 @@ public class SweetAlertModule extends ReactContextBaseJavaModule implements Life
             dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
                 @Override
                 public void onDismiss(DialogInterface dialog) {
-                    actionCallback.invoke(ACTION_DISMISSED);
+                    if (!mCallbackConsumed) {
+                        if (getReactApplicationContext().hasActiveCatalystInstance()) {
+                            actionCallback.invoke(ACTION_DISMISSED);
+                        }
+                    }
                 }
             });
-            if (options.hasKey(KEY_ITEMS)) {
-                ReadableArray items = options.getArray(KEY_ITEMS);
-                CharSequence[] itemsArray = new CharSequence[items.size()];
-                for (int i = 0; i < items.size(); i++) {
-                    itemsArray[i] = items.getString(i);
-                }
-//                args.putCharSequenceArray(AlertFragment.ARG_ITEMS, itemsArray);
-            }
             if (options.hasKey(KEY_CANCELABLE)) {
                 dialog.setCancelable(options.getBoolean(KEY_CANCELABLE));
             }
@@ -192,15 +195,13 @@ public class SweetAlertModule extends ReactContextBaseJavaModule implements Life
             if (type == SweetAlertDialog.CUSTOM_IMAGE_TYPE && options.hasKey(KEY_IMAGE)) {
                 loadImage(dialog, options.getMap(KEY_IMAGE));
             }
-
+            mCallbackConsumed = false;
             if (mIsInForeground) {
                 dialog.show();
             } else {
                 sweetAlertDialog = dialog;
                 showInForeground = true;
             }
-
-//            cust(source);
         }
 
     }

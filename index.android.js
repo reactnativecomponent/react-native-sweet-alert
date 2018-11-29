@@ -68,16 +68,15 @@ export default class SweetAlertRN {
         }
         SweetAlert.showAlert(
             config,
-            errorMessage => console.warn(errorMessage),
             (action, buttonKey) => {
-                if (action === SweetAlert.buttonClicked) {
+                if (action === SweetAlert.buttonClicked) {// "buttonClicked"
 
-                    if (buttonKey === SweetAlert.buttonNegative) {
+                    if (buttonKey === SweetAlert.buttonNegative) { // 0
                         buttonNegative.onPress && buttonNegative.onPress();
-                    } else if (buttonKey === SweetAlert.buttonPositive) {
+                    } else if (buttonKey === SweetAlert.buttonPositive) {// 1
                         buttonPositive.onPress && buttonPositive.onPress();
                     }
-                } else if (action === SweetAlert.dismissed) {
+                } else if (action === SweetAlert.dismissed) { // "dismissed"
                     options && options.onDismiss && options.onDismiss();
                 }
             },
