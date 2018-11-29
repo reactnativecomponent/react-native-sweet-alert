@@ -13,22 +13,41 @@ type Options = {
     onDismiss?: ?Function,
 };
 
-export default class SweetAlertAndroid {
+export default class SweetAlertRN {
 
+    /**
+     * SweetAlert.show("标题", "消息",
+     [{
+                            text: "取消", onPress: () => {
+                                console.info("cancel");
+                            }
+                        }, {
+                            text: "确定", onPress: () => {
+                                console.info("confirm");
+                            }
+                        }], {
+                            cancelable: true, onDismiss: (e) => {
+                                console.info("dismiss");
+                            }
+                        });
+     *
+     * @param title
+     * @param message
+     * @param buttons
+     * @param options
+     */
     static show(title: ?string,
                 message?: ?string,
                 buttons?: Buttons,
-                options?: Options,
-                type?: number,
-                image?): void {
+                options?: Options,): void {
         console.info(SweetAlert);
-        console.info("SweetAlertAndroid show", title,message,buttons,options,type,resolveAssetSource(image));
+        console.info("SweetAlertRN show", title, message, buttons, options);
 
         let config = {
             title: title || '',
             message: message || '',
-            type: type || 0,
-            image: resolveAssetSource(image) || undefined,
+            type: 0,
+            image: undefined,
         };
 
         if (options) {
