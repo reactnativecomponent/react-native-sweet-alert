@@ -1,3 +1,8 @@
-import a from './alert';
 
-export default a;
+import SweetAlert from './SweetAlert'
+
+module.exports = {
+  SweetAlert
+
+}
+
